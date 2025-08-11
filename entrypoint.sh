@@ -2,16 +2,27 @@
 
 set -e
 
-# Launch tmux tasks
 cd $HOME
-echo set-option -g default-shell /bin/bash >> .tmux.conf
-tmux new -s work -d
-tmux rename-window -t work Qwen
-tmux send-keys -t work 'python3 hf_download.py; cd /app; ./llama-server --prio 3 --temp $LLAMA_SAMPLING_TEMPERATURE --min-p $LLAMA_SAMPLING_MIN_P --top-p $LLAMA_SAMPLING_TOP_P --top-k $LLAMA_SAMPLING_TOP_K --presence-penalty $LLAMA_SAMPLING_PRESENCE_PENALTY' C-m  # --verbose --log-file $HOME/llama-server.log' C-m
-tmux split-window -h -t work
-tmux send-keys -t work 'litellm --model $ANTHROPIC_MODEL --temperature $LLAMA_SAMPLING_TEMPERATURE' C-m
-tmux select-layout even-horizontal
-tmux new-window -t work -n 'Claude Code'
-tmux select-window -t work:0
 
-tmux attach -t work
+# Download or find existing model
+python3 hf_download.py
+
+# Launch llama-server in tmux
+echo set-option -g default-shell /bin/bash >> .tmux.conf
+tmux new -s llama-server -d
+tmux rename-window -t llama-server $HF_MODEL
+tmux send-keys -t llama-server 'cd /app; ./llama-server --prio 3 --temp $LLAMA_SAMPLING_TEMPERATURE --min-p $LLAMA_SAMPLING_MIN_P --top-p $LLAMA_SAMPLING_TOP_P --top-k $LLAMA_SAMPLING_TOP_K --repeat-penalty $LLAMA_SAMPLING_REPETITION_PENALTY --chat-template-file $HF_CHAT_TEMPLATE'  C-m  #--verbose --log-file $HOME/llama-server.log' C-m
+tmux split-window -h -t llama-server
+tmux send-keys -t llama-server 'litellm --model $ANTHROPIC_MODEL --temperature $LLAMA_SAMPLING_TEMPERATURE --drop_params' C-m
+tmux select-layout even-horizontal
+echo 'Loading model ...'
+sleep 3
+
+# Lauch terminal to work in
+/bin/bash
+
+# Shutdown llama-server
+tmux send-keys -t llama-server C-c
+echo 'Shutting down llama-server ...'
+sleep 2
+tmux kill-session -t llama-server
