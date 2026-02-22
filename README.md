@@ -50,7 +50,6 @@ For offline mode (no internet required):
 After running, you can test the setup with:
 
 - Claude API compatibility: `./test_anthropic.sh`
-- Reasoning capabilities: `./test_anthropic_reasoning.sh`
 - OpenAI API compatibility: `./test_openai.sh`
 
 ## Configuration
